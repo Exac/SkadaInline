@@ -6,7 +6,7 @@
 -- To change this template use File | Settings | File Templates.
 --
 
-print("Shared.lua loaded.")
+--print("Shared.lua loaded.")
 
 
 function serial(val, name, skipnewlines, depth)

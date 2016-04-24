@@ -6,7 +6,7 @@
 -- To change this template use File | Settings | File Templates.
 --
 
-print("InlineDisplay.lua")
+--print("InlineDisplay.lua")
 
 local L = LibStub("AceLocale-3.0"):GetLocale("Skada", false) --localization
 local Skada = Skada
@@ -136,12 +136,17 @@ function barlibrary:Withdraw ()--TODO: also pass parent and assign parent
         end
         replacement.bg = CreateFrame("Frame", "bg"..replacement.uuid, UIParent)
         replacement.label = replacement.bg:CreateFontString("label"..replacement.uuid)
+        replacement.label:SetJustifyH("LEFT")
         replacement.value = 0
         --add the replacement bar to the end of the bar library
         table.insert(barlibrary.bars, replacement)
     end
     --mark the bar you will give away as in use & give it a barid
     barlibrary.bars[1].inuse = false
+    barlibrary.bars[1].value = 0
+    barlibrary.bars[1].label:SetJustifyH("LEFT")
+    barlibrary.bars[1].label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
+    barlibrary.bars[1].label:SetText("")
     --remove the first bar from the table and return it
     --[[print("Withdrawing bar.uuid", barlibrary.bars[1].uuid, "from the following table:", serial(barlibrary.bars))]]
     return table.remove(barlibrary.bars, 1)
@@ -212,8 +217,12 @@ function mod:Update(win)
         --print(serial(mybars),#mybars, k, v)
         mod:RecycleBar(table.remove(mybars, k))
     end
+    for k,v in pairs(mybars) do
+        --print(serial(mybars),#mybars, k, v)
+        mod:RecycleBar(table.remove(mybars, k))
+    end
     --print("#barlibrary.bars:", #barlibrary.bars, "#mybars:", #mybars)
-    print(#mybars)
+    --print(#mybars)
     --add new bars and update bar info
     for k,bardata in pairs(win.dataset) do
         --Update a fresh bar
@@ -232,7 +241,7 @@ function mod:Update(win)
             end
     end)
 
-    local left = win.frame.barstartx
+    local left = win.frame.barstartx + 15
     for key, bar in pairs(mybars) do
         --set bar positions
         --TODO
@@ -318,7 +327,7 @@ function mod:ApplySettings(win)
         bar.label:SetTextColor(p.title.color.r,p.title.color.g,p.title.color.b,p.title.color.a)
     end
 
-    print("SetFont", p.barfont, p.barfontsize, p.barfontflags)
+    --print("SetFont", p.barfont, p.barfontsize, p.barfontflags)
 
     --
     --background
