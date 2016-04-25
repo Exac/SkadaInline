@@ -18,6 +18,10 @@ mybars[1].uuid = 1
 mybars[1].bg = CreateFrame("Frame", "bg"..mybars[1].uuid, UIParent)
 mybars[1].label = mybars[1].bg:CreateFontString("label"..mybars[1].uuid)
 mybars[1].value = 0
+mybars[1].class = "MAGE"
+
+barlibrary = {} --TODO: make local
+barlibrary.bars = {}
 
 si = mod
 mod.wew = "lad"
@@ -58,7 +62,6 @@ function mod:Create(window)
     --window.frame.fstitle:SetTextColor(255,255,255,1)
     window.frame.fstitle:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
     window.frame.fstitle:SetText(window.metadata.title or "Skada")
-    window.frame.fstitle:SetText(temptitle)
     window.frame.fstitle:SetWordWrap(false)
     window.frame.fstitle:SetJustifyH("LEFT")
     window.frame.fstitle:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", barleft, -1)
@@ -67,11 +70,23 @@ function mod:Create(window)
 
     window.frame.barstartx = barleft + window.frame.fstitle:GetWidth()
 
-
     window.frame.win = window
 
-    --db = self.db
-    --win = window
+    --create 20 barframes
+    local temp = 25
+    repeat
+        barlibrary.bars[temp] = {}
+        barlibrary.bars[temp].uuid = 1
+        barlibrary.bars[temp].inuse = false
+        barlibrary.bars[temp].barid = ""
+        barlibrary.bars[temp].bg = CreateFrame("Frame", "bg"..barlibrary.bars[temp].uuid, UIParent)
+        barlibrary.bars[temp].label = barlibrary.bars[temp].bg:CreateFontString("label"..barlibrary.bars[temp].uuid)
+        barlibrary.bars[temp].label:SetFont(window.db.title.fontpath or media:Fetch('font', window.db.barfont), window.db.barfontsize, window.db.barfontflags)
+        temp = temp - 1
+    until(temp < 1)
+
+    db = self.db
+    win = window
 end
 
 function mod:Destroy(win)
@@ -85,13 +100,12 @@ function mod:SetTitle(win, title)
     win.frame.fstitle:SetText(title)
 end
 
-barlibrary = {} --TODO: make local
-barlibrary.bars = {}
+
 --barlibrary.bars[1] = {}
 --barlibrary.bars[1].uuid = 1
 --barlibrary.bars[1].inuse = false
 --barlibrary.bars[1].barid = ""
---barlibrary.bars[1].bg = CreateFrame("Frame", "bg"..barlibrary.bars.uuid, window.frame)
+--barlibrary.bars[1].bg = CreateFrame("Frame", "bg"..barlibrary.bars.uuid, UIParent)
 --barlibrary.bars[1].label = barlibrary.bars[1].bg:CreateFontString("label"..barlibrary.bars[1].uuid)
 
 --[[    {
@@ -116,19 +130,25 @@ function barlibrary:Deposit (_bar)
     _bar.bg:Hide()
     _bar.value = 0
     _bar.label:Hide()
-    _bar.label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
-    _bar.label:SetText("")
+    --_bar.label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
+    --_bar.label:SetText("")
     --place it at the front of the queue
     table.insert(barlibrary.bars, 1, _bar)
     --print("Depositing bar.uuid", _bar.uuid)
 end
 
-function barlibrary:Withdraw ()--TODO: also pass parent and assign parent
+function barlibrary:Withdraw (win)--TODO: also pass parent and assign parent
+    local db = win.db
 
     if #barlibrary.bars < 2 then
         --if barlibrary is empty, create a new bar to replace this bar
         local replacement = {}
-        if #barlibrary.bars < 2 then
+        if #barlibrary.bars==0 then
+            --No data
+            print("EZ")
+            replacement.uuid = 1
+        elseif #barlibrary.bars < 2 then
+            print("L2")
             replacement.uuid = barlibrary.bars[#barlibrary.bars].uuid + 1
         else
             replacement.uuid = 1
@@ -145,27 +165,28 @@ function barlibrary:Withdraw ()--TODO: also pass parent and assign parent
     barlibrary.bars[1].inuse = false
     barlibrary.bars[1].value = 0
     barlibrary.bars[1].label:SetJustifyH("LEFT")
-    barlibrary.bars[1].label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
-    barlibrary.bars[1].label:SetText("")
+    --barlibrary.bars[1].label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
+    --barlibrary.bars[1].label:SetFont( db.title.fontpath or media:Fetch('font', db.barfont), db.barfontsize, db.barfontflags )
+    --barlibrary.bars[1].label:SetText("")
     --remove the first bar from the table and return it
     --[[print("Withdrawing bar.uuid", barlibrary.bars[1].uuid, "from the following table:", serial(barlibrary.bars))]]
+    mod:ApplySettings(win)
     return table.remove(barlibrary.bars, 1)
 end
 
 function mod:RecycleBar(_bar)
     --Example usage: for k,v in pairs(mybars) do mod:RecycleBar(table.remove(mybars, k)) end
-    _bar.label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
-    _bar.label:SetText("")
+    --_bar.label:SetFont([[Interface\AddOns\SkadaInline\media\fonts\PT_Sans_Narrow.ttf]], 10, nil)
+    --_bar.label:SetText("")
     _bar.value = 0
     --hide stuff
     _bar.label:Hide()
     _bar.bg:Hide()
     barlibrary:Deposit(_bar)
-    --return nil
 end
 
-function mod:GetBar()
-    return barlibrary:Withdraw()
+function mod:GetBar(win)
+    return barlibrary:Withdraw(win)
 end
 
 function mod:UpdateBar(bar, bardata, db)
@@ -188,36 +209,40 @@ function mod:UpdateBar(bar, bardata, db)
         label = label.." - "
         label = label..bardata.valuetext
     end
-    bar.label:SetFont(db.barfont, db.barfontsize, db.barfontflags)
+    bar.label:SetFont(mod:GetFont(db))
     bar.label:SetText(label)
-    --bar.label:SetTextColor(db.title.color.r,db.title.color.g,db.title.color.b,db.title.color.a)
+    bar.label:SetTextColor(mod:GetFontColor(db))
     bar.value = bardata.value
+    bar.class = bardata.class
 
     return bar
 end
 
 function mod:Update(win)
     wd = win.dataset
-    print("Update() #win.dataset", #win.dataset)
-    --TODO: optimize. Each bar doesn't need to be deleted if it is just going to be re-used again.
-    --delete any current bars
-    for k,v in pairs(mybars) do
-        --print(#mybars, #barlibrary.bars, type(k), k)
-        mod:RecycleBar(table.remove(mybars, 1))
-    end
 
-    for k,v in pairs(win.dataset) do
-        if v.label=="Exac" then
-            v.value = v.value * 2.5
+    --purge nil values from dataset
+    for i=#win.dataset, 1, -1 do
+        if win.dataset[i].label==nil then
+            table.remove(win.dataset, i)
         end
     end
 
-    --add new bars and update bar info
+    --TODO: Only if the number of bars changes
+    --delete any current bars
+    local i = #mybars
+    while i > 0 do
+       mod:RecycleBar(table.remove(mybars, i))
+        i = i - 1
+    end
+
     for k,bardata in pairs(win.dataset) do
-        --Update a fresh bar
-        local _bar = mod:GetBar()
-        _bar.label:SetFont(media:Fetch('font', win.db.barfont), win.db.barfontsize, win.db.barfontflags)
-        table.insert(mybars, mod:UpdateBar(_bar, bardata, win.db))
+        for k,v in pairs(bardata) do print(k,v) end
+        if bardata.id then
+            --Update a fresh bar
+            local _bar = mod:GetBar(win)
+            table.insert(mybars, mod:UpdateBar(_bar, bardata, win.db))
+        end
     end
 
     --sort bars
@@ -249,36 +274,6 @@ function mod:Update(win)
         bar.label:Show()
     end
 
-
-
-
-    --[[
-    local nr = 1
-    for i, data in pairs(win.dataset) do
-        if data.id then
-            local barid = data.id
-            local barlabel = data.label
-
-            local bar = mod:GetBar(barid)
-            table.insert(mybars, bar)
-        end
-    end
-    for key, data in pairs(mybars) do
-        barlibrary:Deposit(table.remove(mybars, key))
-    end]]
-
-
-    -- If we are using "wipestale", remove all unchecked bars.
-    --...
-
-    --[[ Sort by the order in the data table if we are using "ordersort".
-    if win.metadata.ordersort then
-        win.bargroup:SetSortFunction(bar_order_sort)
-        win.bargroup:SortBars()
-    else
-        win.bargroup:SetSortFunction(nil)
-        win.bargroup:SortBars()
-    end]]
     si = mod
 end
 
@@ -302,6 +297,22 @@ function mod:CreateBar(win, name, label, maxValue, icon, o)
     return bar
 end
 
+function mod:GetFont(db)
+    if not db.isusingelvuiskin and ElvUI then
+        return  db.title.fontpath or media:Fetch('font', db.barfont), db.barfontsize, db.barfontflags
+    else
+        return ElvUI[1]["media"].normFont, db.barfontsize, nil
+    end
+end
+
+function mod:GetFontColor(db)
+    if not db.isusingelvuiskin and ElvUI then
+        return  db.title.color.r,db.title.color.g,db.title.color.b,db.title.color.a
+    else
+        return 255,255,255,1
+    end
+end
+
 function mod:ApplySettings(win)
     local f = win.frame
     local p = win.db
@@ -314,7 +325,7 @@ function mod:ApplySettings(win)
     f.fstitle:SetFont(p.title.fontpath or media:Fetch('font', p.barfont), p.barfontsize, p.barfontflags)
     for k,bar in pairs(mybars) do
         --bar.label:SetFont(p.barfont,p.barfontsize,p.barfontflags )
-        bar.label:SetFont( media:Fetch('font', p.barfont), p.barfontsize, p.barfontflags )
+        bar.label:SetFont( p.title.fontpath or media:Fetch('font', p.barfont), p.barfontsize, p.barfontflags )
         bar.label:SetTextColor(p.title.color.r,p.title.color.g,p.title.color.b,p.title.color.a)
     end
 
@@ -380,7 +391,7 @@ function mod:AddDisplayOptions(win, options)
     local db = win.db
     options.baroptions = {
         type = "group",
-        name = "Data Display Options",
+        name = "Text",
         order = 3,
         args = {
             height = {

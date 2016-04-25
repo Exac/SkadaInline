@@ -15,4 +15,5 @@
     <Script file="lib\LibDataBroker-1.1\LibDataBroker-1.1.lua"/>
     <Script file="lib\LibWindow-1.1\LibWindow-1.1.lua"/>
     <Include file="lib\AceGUI-3.0-SharedMediaWidgets\widget.xml"/>
+    <Script file="lib\LibGraph-2.0\LibGraph-2.0.lua"/>
 </Ui>
