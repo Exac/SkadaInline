@@ -70,8 +70,8 @@ function mod:Create(window)
 
     window.frame.win = window
 
-    db = self.db
-    win = window
+    --db = self.db
+    --win = window
 end
 
 function mod:Destroy(win)
@@ -161,6 +161,7 @@ function mod:RecycleBar(_bar)
     _bar.label:Hide()
     _bar.bg:Hide()
     barlibrary:Deposit(_bar)
+    --return nil
 end
 
 function mod:GetBar()
@@ -197,36 +198,25 @@ end
 
 function mod:Update(win)
     wd = win.dataset
-
-    --TODO: Only if the number of bars changes
+    print("Update() #win.dataset", #win.dataset)
+    --TODO: optimize. Each bar doesn't need to be deleted if it is just going to be re-used again.
     --delete any current bars
-    --TODO:Fix this. If the loop isn't run many times mybars isn't emptied. Fix the key, k
     for k,v in pairs(mybars) do
-        --print(serial(mybars),#mybars, k, v)
-        mod:RecycleBar(table.remove(mybars, k))
+        --print(#mybars, #barlibrary.bars, type(k), k)
+        mod:RecycleBar(table.remove(mybars, 1))
     end
-    for k,v in pairs(mybars) do
-        --print(serial(mybars),#mybars, k, v)
-        mod:RecycleBar(table.remove(mybars, k))
+
+    for k,v in pairs(win.dataset) do
+        if v.label=="Exac" then
+            v.value = v.value * 2.5
+        end
     end
-    for k,v in pairs(mybars) do
-        --print(serial(mybars),#mybars, k, v)
-        mod:RecycleBar(table.remove(mybars, k))
-    end
-    for k,v in pairs(mybars) do
-        --print(serial(mybars),#mybars, k, v)
-        mod:RecycleBar(table.remove(mybars, k))
-    end
-    for k,v in pairs(mybars) do
-        --print(serial(mybars),#mybars, k, v)
-        mod:RecycleBar(table.remove(mybars, k))
-    end
-    --print("#barlibrary.bars:", #barlibrary.bars, "#mybars:", #mybars)
-    --print(#mybars)
+
     --add new bars and update bar info
     for k,bardata in pairs(win.dataset) do
         --Update a fresh bar
         local _bar = mod:GetBar()
+        _bar.label:SetFont(media:Fetch('font', win.db.barfont), win.db.barfontsize, win.db.barfontflags)
         table.insert(mybars, mod:UpdateBar(_bar, bardata, win.db))
     end
 
@@ -323,7 +313,8 @@ function mod:ApplySettings(win)
     f.fstitle:SetTextColor(p.title.color.r,p.title.color.g,p.title.color.b,p.title.color.a)
     f.fstitle:SetFont(p.title.fontpath or media:Fetch('font', p.barfont), p.barfontsize, p.barfontflags)
     for k,bar in pairs(mybars) do
-        bar.label:SetFont(p.barfont,p.barfontsize,p.barfontflags )
+        --bar.label:SetFont(p.barfont,p.barfontsize,p.barfontflags )
+        bar.label:SetFont( media:Fetch('font', p.barfont), p.barfontsize, p.barfontflags )
         bar.label:SetTextColor(p.title.color.r,p.title.color.g,p.title.color.b,p.title.color.a)
     end
 
