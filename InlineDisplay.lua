@@ -41,6 +41,10 @@ function mod:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("SkadaInlineDB") --matches SkadaInline.toc SavedVariables
 end
 
+function mod:OnClick()
+    Skada:OpenMenu()
+end
+
 function mod:Create(window)
     if not window.frame then
         window.frame = window.bargroup
@@ -68,6 +72,39 @@ function mod:Create(window)
     window.frame.fstitle:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMLEFT", 280, -1)
     window.frame.fstitle:SetHeight(window.db.barheight or 23)
 
+    local skadamenubuttonbackdrop = {
+        bgFile = "Interface\\Buttons\\UI-OptionsButton",
+        edgeFile = "Interface\\Buttons\\UI-OptionsButton",
+        bgFile = nil,
+        edgeFile = nil,
+        tile = true,
+        tileSize = 12,
+        edgeSize = 0,
+        insets = {
+            left = 0,
+            right = 0,
+            top = 0,
+            bottom = 0
+        }
+    }
+
+    window.frame.skadamenubutton = CreateFrame("Button", "InlineFrameMenuButton", UIParent)--, "UIPanelButtonTemplate")
+    window.frame.skadamenubutton:ClearAllPoints()
+    window.frame.skadamenubutton:SetWidth(12)
+    window.frame.skadamenubutton:SetHeight(12)
+    window.frame.skadamenubutton:SetNormalTexture("Interface\\Buttons\\UI-OptionsButton")
+    window.frame.skadamenubutton:SetHighlightTexture("Interface\\Buttons\\UI-OptionsButton", 1.0)
+    window.frame.skadamenubutton:SetAlpha(0.5)
+    window.frame.skadamenubutton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    window.frame.skadamenubutton:SetBackdropColor(window.db.title.color.r,window.db.title.color.g,window.db.title.color.b,window.db.title.color.a)
+    window.frame.skadamenubutton:SetPoint("BOTTOMLEFT", window.frame, "BOTTOMLEFT", 6, window.db.barheight/2-6)
+    window.frame.skadamenubutton:SetFrameLevel(9)
+    window.frame.skadamenubutton:SetPoint("CENTER")
+    window.frame.skadamenubutton:SetBackdrop(skadamenubuttonbackdrop)
+    window.frame.skadamenubutton:SetScript("OnClick", function()
+        Skada:OpenMenu(window)
+    end)
+
     window.frame.barstartx = barleft + window.frame.fstitle:GetWidth()
 
     window.frame.win = window
@@ -79,7 +116,7 @@ function mod:Create(window)
         barlibrary.bars[temp].uuid = 1
         barlibrary.bars[temp].inuse = false
         barlibrary.bars[temp].barid = ""
-        barlibrary.bars[temp].bg = CreateFrame("Frame", "bg"..barlibrary.bars[temp].uuid, UIParent)
+        barlibrary.bars[temp].bg = CreateFrame("Frame", "bg"..barlibrary.bars[temp].uuid, window.frame)
         barlibrary.bars[temp].label = barlibrary.bars[temp].bg:CreateFontString("label"..barlibrary.bars[temp].uuid)
         barlibrary.bars[temp].label:SetFont(window.db.title.fontpath or media:Fetch('font', window.db.barfont), window.db.barfontsize, window.db.barfontflags)
         temp = temp - 1
@@ -145,14 +182,12 @@ function barlibrary:Withdraw (win)--TODO: also pass parent and assign parent
         local replacement = {}
         if #barlibrary.bars==0 then
             --No data
-            print("EZ")
             replacement.uuid = 1
         elseif #barlibrary.bars < 2 then
-            print("L2")
             replacement.uuid = barlibrary.bars[#barlibrary.bars].uuid + 1
         else
             replacement.uuid = 1
-            print("THIS SHOULD NEVER HAPPEN")
+            print("|c0033ff99SkadaInline|r: THIS SHOULD NEVER HAPPEN")
         end
         replacement.bg = CreateFrame("Frame", "bg"..replacement.uuid, UIParent)
         replacement.label = replacement.bg:CreateFontString("label"..replacement.uuid)
@@ -205,8 +240,18 @@ function mod:UpdateBar(bar, bardata, db)
     bar.value = 1
     return bar]]
     local label = bardata.label
+    if db.isusingclasscolors then
+        if bardata.class then
+            label = "|c"
+            label = label..RAID_CLASS_COLORS[bardata.class].colorStr
+            label = label..bardata.label
+            label = label.."|r"
+        end
+    else
+        label = bardata.label
+    end
     if bardata.valuetext then
-        label = label.." - "
+        if db.isonnewline and db.barfontsize*2 < db.barheight then label = label.."\n" else label = label.." - " end
         label = label..bardata.valuetext
     end
     bar.label:SetFont(mod:GetFont(db))
@@ -237,7 +282,6 @@ function mod:Update(win)
     end
 
     for k,bardata in pairs(win.dataset) do
-        for k,v in pairs(bardata) do print(k,v) end
         if bardata.id then
             --Update a fresh bar
             local _bar = mod:GetBar(win)
@@ -298,10 +342,10 @@ function mod:CreateBar(win, name, label, maxValue, icon, o)
 end
 
 function mod:GetFont(db)
-    if not db.isusingelvuiskin and ElvUI then
-        return  db.title.fontpath or media:Fetch('font', db.barfont), db.barfontsize, db.barfontflags
+    if db.isusingelvuiskin and ElvUI then
+        if ElvUI then return ElvUI[1]["media"].normFont, db.barfontsize, nil else return nil end
     else
-        return ElvUI[1]["media"].normFont, db.barfontsize, nil
+        return  db.title.fontpath or media:Fetch('font', db.barfont), db.barfontsize, db.barfontflags
     end
 end
 
@@ -394,6 +438,28 @@ function mod:AddDisplayOptions(win, options)
         name = "Text",
         order = 3,
         args = {
+            isonnewline = {
+                type = 'toggle',
+                name = "Put values on new line.",
+                desc = "New line:\nExac\n30.71M (102.1K)\n\nDivider:\nExac - 30.71M (102.7K)",
+                get = function() return db.isonnewline end,
+                set = function(win,key)
+                    db.isonnewline = key
+                    Skada:ApplySettings()
+                end,
+                order=0.0,
+            },
+            isusingclasscolors = {
+                type = 'toggle',
+                name = "Use class colors",
+                desc = "Class colors:\n|cFFF58CBAExac|r - 30.71M (102.7K)\nWithout:\nExac - 30.71M (102.7K)",
+                get = function() return db.isusingclasscolors end,
+                set = function(win,key)
+                    db.isusingclasscolors = key
+                    Skada:ApplySettings()
+                end,
+                order=0.05,
+            },
             height = {
                 type = 'range',
                 name = "Height",
