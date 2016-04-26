@@ -11,7 +11,7 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("Skada", false) --localization
 local Skada = Skada
 local mod = Skada:NewModule("InlineBarDisplay")
-
+local enabledState = true
 mybars = {}
 mybars[1] = {}
 mybars[1].uuid = 1
@@ -102,7 +102,7 @@ function mod:Create(window)
     window.frame.skadamenubutton:SetPoint("CENTER")
     window.frame.skadamenubutton:SetBackdrop(skadamenubuttonbackdrop)
     window.frame.skadamenubutton:SetScript("OnClick", function()
-        Skada:OpenMenu(window)
+        mod:OnClick()
     end)
 
     window.frame.barstartx = barleft + window.frame.fstitle:GetWidth()
@@ -125,6 +125,24 @@ function mod:Create(window)
     db = self.db
     win = window
 end
+
+function mod:IsShown()
+    return not window.db.hidden
+end
+
+function mod:Show()
+    print("ENABLE")
+    window.db.hidden = true
+    window.frame:Show()
+end
+
+function mod:Hide()
+    print("HIDE")
+    window.db.hidden = false
+    window.frame:Hide()
+end
+
+
 
 function mod:Destroy(win)
     win.frame:Hide()
